@@ -6,3 +6,15 @@ It is possible to connect Jicofo to external conference reservation system using
 
 Jire does this for you.
 
+## Use with gunicorn
+
+```
+pip install gunicorn
+exec gunicorn -b :8080 main:app
+```
+
+## Development
+
+This is a work in progress, pull requests are welcome.
+
+Install with `python setup.py develop` and run with `flask run`.
