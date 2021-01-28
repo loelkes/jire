@@ -1,0 +1,58 @@
+{% extends "index.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block app_content %}
+
+<div class="row pt-5">
+    <div class="col-xl-12">
+        <h2>Book a conference room</h2>
+
+        <form method="post" role="form" action="reservation/create" enctype="multipart/form-data">
+          {{ form.csrf_token }}
+
+            <div class="row">
+              <div class="col-xl-3">{{ wtf.form_field(form.start_time) }}</div>
+              <div class="col-xl-3">{{ wtf.form_field(form.timezone) }}</div>
+              <div class="col-xl-3">{{ wtf.form_field(form.name) }}</div>
+              <div class="col-xl-3">
+                  <div class="form-group">
+                      <label class="control-label" for="submit">&zwnj;</label>
+                      <button class="btn btn-primary form-control" type="submit">Submit</button>
+                  </div>
+              </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row pt-3">
+    <div class="col-xl-12">
+        <h2>Reservations</h2>
+        <table class="table table-striped table-bordered" style="width:100%" id="reservations">
+          <thead>
+            <tr>
+                <th>ID</th>
+                <th>Start time</th>
+                <th>Name</th>
+                <th>Owner</th>
+                <th>Duration</th>
+                <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for key, event in active_reservations.items() %}
+            <tr>
+              <td>{{ event['id'] }}</td>
+              <td>{{ event['start_time'] }}</td>
+              <td>{{ event['name'] }}</td>
+              <td>{{ event['mail_owner'] }}</td>
+              <td>{{ event['duration'] }}</td>
+              <td><a href="reservation/delete/{{ event['id'] }}">Delete</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

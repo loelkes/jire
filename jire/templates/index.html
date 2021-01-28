@@ -1,0 +1,42 @@
+{% extends 'bootstrap/base.html' %}
+
+{% block title %}
+  Jitsi Room Reservation
+{% endblock %}
+
+{% block styles %}
+{{super()}}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/jire.css') }}"/>
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/datatables.min.css') }}"/>
+{% endblock %}
+
+{% block scripts %}
+{{super()}}
+<script src="{{url_for('.static', filename='js/datatables.min.js')}}"></script>
+<script src="{{url_for('.static', filename='js/jire.js')}}"></script>
+{% endblock %}
+
+{% block content %}
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <a class="navbar-brand" href="#">Jitsi Room Reservation</a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="navbarNav">
+    <ul class="navbar-nav">
+      <li class="nav-item active">
+        <a class="nav-link" href="reservations">Reservations</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="conferences">Conferences</a>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+  {% block app_content %}{% endblock %}
+</div>
+
+{% endblock %}
