@@ -1,5 +1,5 @@
 from jire import app, manager, csrf
-from flask import request, render_template, redirect, url_for, jsonify
+from flask import request, render_template, redirect, url_for, jsonify, flash
 from flask_api import status
 from .CustomExceptions import ConferenceExists, ConferenceNotAllowed
 from .forms import ReservationForm
@@ -28,8 +28,14 @@ def reservation():
         app.logger.info('New reservation validation successfull')
     else:
         app.logger.info('New reservation validation failed')
-        print(form.errors.items())
-    return redirect(url_for('home'))
+        for key, value in form.errors.items():
+            label = getattr(form, key).label.text
+            # In case multiple messages for one validation?
+            flash('{}: {}'.format(label, ' '.join([str(m) for m in value])), 'danger')
+
+    return render_template('reservations.html',
+                           form=form,
+                           active_reservations=manager.reservations_formatted)
 
 
 @app.route('/reservation/delete/<id>', methods=['GET'])
