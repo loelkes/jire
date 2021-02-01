@@ -26,7 +26,7 @@ class Reservation:
     def __init__(self, data: dict = None):
 
         self.id = int(data.get('id', random.random()*10e9))
-        self.name = data.get('name')
+        self.name = data.get('name').replace(' ', '_').lower()
         self.mail_owner = data.get('mail_owner')
         self.timezone = pytz.timezone(data.get('timezone', 'UTC'))
         self.__duration = timedelta(seconds=int(data.get('duration', -1)))
