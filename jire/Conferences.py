@@ -29,7 +29,9 @@ class Reservation:
         self.name = data.get('name').replace(' ', '_').lower()
         self.mail_owner = data.get('mail_owner')
         self.timezone = pytz.timezone(data.get('timezone', 'UTC'))
-        self.__duration = timedelta(seconds=int(data.get('duration', -1)))
+        _duration = int(data.get('duration', -1))
+        _duration = 6*3600 if _duration < 0 else _duration
+        self.__duration = timedelta(seconds=_duration)
 
         # Make it possible to pass datetime instances. Maybe for the future...
         if isinstance(data.get('start_time'), datetime):
@@ -53,7 +55,7 @@ class Reservation:
     def duration(self) -> int:
         """Get the conference duration in seconds.
 
-        Duration is set to -1 if disabled.
+        If not set the duration falls back to 6 hours (21.600 seconds). 
         """
 
         return int(self.__duration.total_seconds())
