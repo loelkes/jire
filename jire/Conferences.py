@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from dateutil import parser as dp
+import os
 import logging
 import random
 import pytz
@@ -32,6 +33,7 @@ class Reservation:
         _duration = int(data.get('duration', -1))
         _duration = 6*3600 if _duration < 0 else _duration
         self.__duration = timedelta(seconds=_duration)
+        self.jitsi_server = os.environ.get('PUBLIC_URL')  # Public URL of the Jitsi web service
 
         # Make it possible to pass datetime instances. Maybe for the future...
         if isinstance(data.get('start_time'), datetime):
@@ -42,6 +44,13 @@ class Reservation:
         if (self.__start_time.tzinfo is None or
                 self.__start_time.tzinfo.utcoffset(self.__start_time) is None):
             self.__start_time = self.timezone.localize(self.__start_time)
+
+    @property
+    def room_url(self):
+        if self.jitsi_server is not None:
+            return f'{self.jitsi_server}/{self.name}'
+        else:
+            return '/'
 
     @property
     def start_time(self) -> str:
@@ -71,6 +80,8 @@ class Reservation:
         }
         if self.mail_owner is not None:
             output['mail_owner'] = self.mail_owner
+        if self.room_url is not None:
+            output['url'] = self.room_url
         return output
 
     def check_allowed(self, owner: str = None, start_time: str = None) -> bool:

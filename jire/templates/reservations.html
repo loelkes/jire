@@ -44,7 +44,7 @@
             <tr>
               <td>{{ event['id'] }}</td>
               <td>{{ event['start_time'] }}</td>
-              <td>{{ event['name'] }}</td>
+              <td><a href="{{ event['url'] }}">{{ event['name'] }}</a></td>
               <td>{{ event['mail_owner'] }}</td>
               <td>{{ event['duration'] }}</td>
               <td><a href="/reservation/delete/{{ event['id'] }}">Delete</a></td>

@@ -19,7 +19,7 @@
             {% for key, value in active_conferences.items() %}
             <tr>
               <td>{{ value['id'] }}</td>
-              <td>{{ value['name'] }}</td>
+              <td><a href="{{ value['url'] }}">{{ value['name'] }}</a></td>
               <td>{{ value['mail_owner'] }}</td>
               <td>{{ value['duration'] }}</td>
             </tr>
