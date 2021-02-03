@@ -11,10 +11,11 @@
           {{ form.csrf_token }}
 
             <div class="row">
-              <div class="col-xl-3">{{ wtf.form_field(form.start_time) }}</div>
-              <div class="col-xl-3">{{ wtf.form_field(form.timezone) }}</div>
               <div class="col-xl-3">{{ wtf.form_field(form.name) }}</div>
-              <div class="col-xl-3">
+              <div class="col-xl-3">{{ wtf.form_field(form.start_time) }}</div>
+              <div class="col-xl-2">{{ wtf.form_field(form.duration) }}</div>
+              <div class="col-xl-2">{{ wtf.form_field(form.timezone) }}</div>
+              <div class="col-xl-2">
                   <div class="form-group">
                       <label class="control-label" for="submit">&zwnj;</label>
                       <button class="btn btn-primary form-control" type="submit">Submit</button>

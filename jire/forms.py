@@ -1,12 +1,12 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, DateTimeLocalField, SelectField
+from wtforms import StringField, SubmitField, DateTimeLocalField, SelectField, DecimalField
 import wtforms.validators as validators
 import pytz
 
 
 class ReservationForm(FlaskForm):
 
-    start_time = DateTimeLocalField(label='Day and time',
+    start_time = DateTimeLocalField(label='Start day and time',
                                     validators=[validators.InputRequired()],
                                     format='%Y-%m-%dT%H:%M')
 
@@ -20,5 +20,7 @@ class ReservationForm(FlaskForm):
                           message='Allowed for room names are: a-z, 0-9, -, _ and space.')
     ]
     name = StringField(label='Room name', validators=_name_validators)
+
+    duration = DecimalField(label='Duration', places=0, default=15)
 
     submit = SubmitField(label='Submit')

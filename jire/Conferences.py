@@ -31,7 +31,7 @@ class Reservation:
         self.mail_owner = data.get('mail_owner')
         self.timezone = pytz.timezone(data.get('timezone', 'UTC'))
         _duration = int(data.get('duration', -1))
-        _duration = 6*3600 if _duration < 0 else _duration
+        _duration = 6*3600 if _duration <= 0 else _duration
         self.__duration = timedelta(seconds=_duration)
         self.jitsi_server = os.environ.get('PUBLIC_URL')  # Public URL of the Jitsi web service
 

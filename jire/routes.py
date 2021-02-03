@@ -24,7 +24,9 @@ def home():
 def reservation():
     form = ReservationForm()
     if form.validate_on_submit():
-        manager.add_reservation(form.data)
+        data = form.data
+        data['duration'] *= 60  # Convert minutes to seconds
+        manager.add_reservation(data)
         app.logger.info('New reservation validation successfull')
     else:
         app.logger.info('New reservation validation failed')
