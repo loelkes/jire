@@ -56,7 +56,8 @@ class Reservation:
     def start_time(self) -> str:
         """Get a Java SimpleDateFormat compatible date string."""
 
-        return self.__start_time.isoformat().replace('000+', '+')
+        start_time = self.__start_time.strftime('%Y-%m-%dT%H:%M:%S.ms%z')
+        return start_time.replace('ms', '{:03.0f}'.format(self.__start_time.microsecond//1000))
         # Disgusting hack to make isoformat() print the precision time in milliseconds instead
         # of microseconds, becasue Java can't handle that. -.-
 
@@ -64,7 +65,7 @@ class Reservation:
     def duration(self) -> int:
         """Get the conference duration in seconds.
 
-        If not set the duration falls back to 6 hours (21.600 seconds). 
+        If not set the duration falls back to 6 hours (21.600 seconds).
         """
 
         return int(self.__duration.total_seconds())
