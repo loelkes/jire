@@ -33,6 +33,8 @@ class Reservation:
         _duration = int(data.get('duration', -1))
         _duration = 6*3600 if _duration <= 0 else _duration
         self.__duration = timedelta(seconds=_duration)
+        self.pin = data.get('pin')
+
         self.jitsi_server = os.environ.get('PUBLIC_URL')  # Public URL of the Jitsi web service
 
         # Make it possible to pass datetime instances. Maybe for the future...
@@ -83,6 +85,8 @@ class Reservation:
             output['mail_owner'] = self.mail_owner
         if self.room_url is not None:
             output['url'] = self.room_url
+        if self.pin is not None:
+            output['pin'] = self.pin
         return output
 
     def check_allowed(self, owner: str = None, start_time: str = None) -> bool:
