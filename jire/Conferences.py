@@ -207,7 +207,6 @@ class Manager:
         """Add a reservation to the database."""
 
         reservation = Reservation(data)
-        print(reservation.to_dict())
         self.__reservations[reservation.name] = reservation.to_dict()
         self.__logger.debug(f'Add reservation for room {reservation.name} to the database')
         return reservation.id

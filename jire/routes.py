@@ -28,16 +28,16 @@ def reservation():
         data['duration'] *= 60  # Convert minutes to seconds
         manager.add_reservation(data)
         app.logger.info('New reservation validation successfull')
+        return redirect(url_for('home'))
     else:
         app.logger.info('New reservation validation failed')
         for key, value in form.errors.items():
             label = getattr(form, key).label.text
             # In case multiple messages for one validation?
             flash('{}: {}'.format(label, ' '.join([str(m) for m in value])), 'danger')
-
-    return render_template('reservations.html',
-                           form=form,
-                           active_reservations=manager.reservations_formatted)
+        return render_template('reservations.html',
+                               form=form,
+                               active_reservations=manager.reservations_formatted)
 
 
 @app.route('/reservation/delete/<id>', methods=['GET'])

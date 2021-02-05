@@ -19,8 +19,11 @@ class ReservationForm(FlaskForm):
         validators.Regexp('^[a-zA-Z0-9_ -]*$',
                           message='Allowed for room names are: a-z, 0-9, -, _ and space.')
     ]
+
+    pin = StringField(label='Password')
+
     name = StringField(label='Room name', validators=_name_validators)
 
-    duration = DecimalField(label='Duration', places=0, default=15)
+    duration = DecimalField(label='Duration (minutes)', places=0, default=15)
 
     submit = SubmitField(label='Submit')
