@@ -13,6 +13,14 @@ docker build -t jire:latest .
 docker run -v "$(pwd)"/log:/usr/src/app/log -p 8080:8080 jire:latest
 ```
 
+### Configure Jitsi-meet
+
+If you use [docker-jitsi-meet](https://github.com/jitsi/docker-jitsi-meet) you need to change the following lines in `.env`:
+
+```
+JICOFO_RESERVATION_ENABLED=true
+JICOFO_RESERVATION_REST_BASE_URL=<url-to-your-jire>
+```
 
 ## Use with gunicorn
 
