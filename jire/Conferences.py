@@ -5,8 +5,9 @@ import logging
 import random
 import pytz
 from typing import Union
-from .CustomExceptions import ConferenceNotAllowed, ConferenceExists
+from .CustomExceptions import ConferenceNotAllowed, ConferenceExists, OverlappingReservation
 from sqlalchemy import Column, Integer, String, DateTime, Interval, Boolean, create_engine, or_
+from sqlalchemy import between
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -21,6 +22,7 @@ class Reservation(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     start_time = Column(DateTime)
+    end_time = Column(DateTime)
     duration = Column(Interval)
     timezone = Column(String)
     pin = Column(String)
@@ -34,11 +36,9 @@ class Reservation(Base):
         self.name = data.get('name').replace(' ', '_').lower()
         self.mail_owner = data.get('mail_owner')
         self.pin = data.get('pin')
-        _duration = int(data.get('duration', -1))
-        _duration = 6*3600 if _duration <= 0 else _duration
-        self.duration = timedelta(seconds=_duration)
         self.timezone = data.get('timezone', 'UTC')
         self.set_start_time(start_time=data.get('start_time'))
+        self.set_duration(duration=data.get('duration', -1))
         self.jitsi_server = os.environ.get('PUBLIC_URL')  # Public URL of the Jitsi web service
 
         return self
@@ -55,10 +55,23 @@ class Reservation(Base):
             start_time = timezone.localize(start_time)
         self.start_time = start_time
 
+    def set_duration(self, duration: Union[timedelta, str]):
+        if isinstance(duration, timedelta):
+            self.duration = duration
+        else:
+            duration = int(duration) if int(duration) > 0 else 6*36000
+            self.duration = timedelta(seconds=duration)
+        self.end_time = self.start_time + self.duration
+
     @property
     def start_time_formatted(self) -> str:
 
         return self.start_time.strftime('%c')
+
+    @property
+    def end_time_formatted(self) -> str:
+
+        return self.end_time.strftime('%c')
 
     @property
     def start_time_aware(self) -> datetime:
@@ -238,7 +251,40 @@ class Manager:
         """Add a reservation to the database."""
 
         event = Reservation().from_dict(data)
+        self.check_overlapping_reservations(event)
         self.session.add(event)
         self.session.commit()
         self.__logger.debug(f'Add reservation for room {event.name} to the database')
         return event
+
+    def check_overlapping_conference(self, new_res: Reservation) -> bool:
+
+        time_filter = between(new_res.start_time, Reservation.start_time, Reservation.end_time)
+        result = self.session.query(Reservation) \
+                             .filter(Reservation.name == new_res.name) \
+                             .filter(time_filter) \
+                             .filter(Reservation.active == True) \
+                             .first()
+
+        if result is not None:
+            message = f'A conference with this name currently exists. Your reservation can only \
+                        start once the event is over, which will be at {result.end_time_formatted}'
+            raise ConferenceExists(message=message)
+
+        return True
+
+    def check_overlapping_reservations(self, new_res: Reservation) -> bool:
+
+        # Check if start and end time of the new reservation collide with other bookings
+        time_filter = or_(between(new_res.start_time, Reservation.start_time, Reservation.end_time),
+                          between(new_res.end_time, Reservation.start_time, Reservation.end_time))
+
+        results = self.session.query(Reservation) \
+                             .filter(Reservation.name == new_res.name) \
+                             .filter(time_filter) \
+                             .filter(Reservation.active == False)
+
+        if results.count():
+            raise OverlappingReservation(events=results.all())
+
+        return True
