@@ -44,14 +44,14 @@
             </tr>
           </thead>
           <tbody>
-            {% for key, event in active_reservations.items() %}
+            {% for reservation in reservations %}
             <tr>
-              <td>{{ event['id'] }}</td>
-              <td>{{ event['start_time'] }}</td>
-              <td><a href="{{ event['url'] }}">{{ event['name'] }}</a></td>
-              <td>{{ event['mail_owner'] }}</td>
-              <td>{{ event['duration'] }}</td>
-              <td><a href="/reservation/delete/{{ event['id'] }}">Delete</a></td>
+              <td>{{ reservation.id }}</td>
+              <td>{{ reservation.start_time_formatted }}</td>
+              <td><a href="{{ reservation.room_url }}">{{ reservation.name }}</a></td>
+              <td>{{ reservation.mail_owner }}</td>
+              <td>{{ reservation.duration }}</td>
+              <td><a href="/reservation/delete/{{ reservation.id }}">Delete</a></td>
             </tr>
             {% endfor %}
           </tbody>

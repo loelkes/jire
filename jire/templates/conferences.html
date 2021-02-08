@@ -16,12 +16,12 @@
             </tr>
           </thead>
           <tbody>
-            {% for key, value in active_conferences.items() %}
+            {% for conference in conferences %}
             <tr>
-              <td>{{ value['id'] }}</td>
-              <td><a href="{{ value['url'] }}">{{ value['name'] }}</a></td>
-              <td>{{ value['mail_owner'] }}</td>
-              <td>{{ value['duration'] }}</td>
+              <td>{{ conference.id }}</td>
+              <td><a href="{{ conference.room_url }}">{{ conference.name }}</a></td>
+              <td>{{ conference.mail_owner }}</td>
+              <td>{{ conference.duration }}</td>
             </tr>
             {% endfor %}
           </tbody>

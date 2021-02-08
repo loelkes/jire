@@ -8,7 +8,7 @@ from .forms import ReservationForm
 @app.route('/conferences', methods=['GET'])
 def show_conferences():
     return render_template('conferences.html',
-                           active_conferences=manager.conferences_formatted)
+                           conferences=manager.all_conferences)
 
 
 @app.route('/')
@@ -17,7 +17,7 @@ def home():
     form = ReservationForm()
     return render_template('reservations.html',
                            form=form,
-                           active_reservations=manager.reservations_formatted)
+                           reservations=manager.all_reservations)
 
 
 @app.route('/reservation/create', methods=['POST'])
@@ -37,7 +37,7 @@ def reservation():
             flash('{}: {}'.format(label, ' '.join([str(m) for m in value])), 'danger')
         return render_template('reservations.html',
                                form=form,
-                               active_reservations=manager.reservations_formatted)
+                               reservations=manager.all_reservations)
 
 
 @app.route('/reservation/delete/<id>', methods=['GET'])
@@ -69,7 +69,7 @@ def conference_id(id):
 
     if request.method == 'GET':
         # In case of 409 CONFLICT Jitsi will request information about the conference
-        return jsonify(manager.get_conference(id)), status.HTTP_200_OK
+        return jsonify(manager.get_conference(id).get_jicofo_api_dict()), status.HTTP_200_OK
     elif request.method == 'DELETE':
         # Delete the conference after it's over
         if manager.delete_conference(id=id):

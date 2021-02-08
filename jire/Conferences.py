@@ -6,87 +6,111 @@ import random
 import pytz
 from typing import Union
 from .CustomExceptions import ConferenceNotAllowed, ConferenceExists
+from sqlalchemy import Column, Integer, String, DateTime, Interval, Boolean, create_engine, or_
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 
-class Reservation:
+Base = declarative_base()
+Session = sessionmaker()
+
+class Reservation(Base):
     """The Reservation class holds room reservations and running conferences."""
 
-    @staticmethod
-    def format_event(input: dict) -> dict:
-        """Format the event for frontend template.
+    __tablename__ = 'reservations'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    start_time = Column(DateTime)
+    duration = Column(Interval)
+    timezone = Column(String)
+    pin = Column(String)
+    mail_owner = Column(String)
+    active = Column(Boolean, default=False)
 
-        Formatting could be done in the teamplte or in the brower as well but it seemed easier and
-        faster to just do it here.
-        """
+    def __repr__(self):
+        return f'<Reservation(id={self.id}, name={self.name}), start_time={self.start_time}>'
 
-        item = input.copy()
-        item['start_time'] = dp.isoparse(item['start_time']).strftime('%c')
-        item['duration'] = str(timedelta(seconds=item['duration'])) if item['duration'] > 0 else ''
-        return item
-
-    def __init__(self, data: dict = None):
-
-        self.id = int(data.get('id', random.random()*10e9))
+    def from_dict(self, data: dict):
         self.name = data.get('name').replace(' ', '_').lower()
         self.mail_owner = data.get('mail_owner')
-        self.timezone = pytz.timezone(data.get('timezone', 'UTC'))
+        self.pin = data.get('pin')
         _duration = int(data.get('duration', -1))
         _duration = 6*3600 if _duration <= 0 else _duration
-        self.__duration = timedelta(seconds=_duration)
-        self.pin = data.get('pin')
-
+        self.duration = timedelta(seconds=_duration)
+        self.timezone = data.get('timezone', 'UTC')
+        self.set_start_time(start_time=data.get('start_time'))
         self.jitsi_server = os.environ.get('PUBLIC_URL')  # Public URL of the Jitsi web service
 
-        # Make it possible to pass datetime instances. Maybe for the future...
-        if isinstance(data.get('start_time'), datetime):
-            self.__start_time = data.get('start_time')
+        return self
+
+    def set_start_time(self, start_time: Union[datetime, str]):
+        """Handle different datetime inputs and timezones"""
+
+        if isinstance(start_time, datetime):
+            start_time = start_time
         else:
-            self.__start_time = dp.isoparse(data.get('start_time'))
-        # Only set timezone if datetime is naive
-        if (self.__start_time.tzinfo is None or
-                self.__start_time.tzinfo.utcoffset(self.__start_time) is None):
-            self.__start_time = self.timezone.localize(self.__start_time)
+            start_time = dp.isoparse(start_time)
+        timezone = pytz.timezone(self.timezone)
+        if (start_time.tzinfo is None or start_time.tzinfo.utcoffset(start_time) is None):
+            start_time = timezone.localize(start_time)
+        self.start_time = start_time
+
+    @property
+    def start_time_formatted(self) -> str:
+
+        return self.start_time.strftime('%c')
+
+    @property
+    def start_time_aware(self) -> datetime:
+
+        timezone = pytz.timezone(self.timezone)
+        return timezone.localize(self.start_time)
+
+    @property
+    def end_time_aware(self) -> datetime:
+
+        timezone = pytz.timezone(self.timezone)
+        return timezone.localize(self.end_time)
 
     @property
     def room_url(self):
+
         if self.jitsi_server is not None:
             return f'{self.jitsi_server}/{self.name}'
         else:
             return '/'
 
-    @property
-    def start_time(self) -> str:
-        """Get a Java SimpleDateFormat compatible date string."""
+    def get_SimpleDateFormat_start_time(self) -> str:
+        """Get a Java SimpleDateFormat compatible date string.
 
-        start_time = self.__start_time.strftime('%Y-%m-%dT%H:%M:%S.ms%z')
-        return start_time.replace('ms', '{:03.0f}'.format(self.__start_time.microsecond//1000))
-        # Disgusting hack to make isoformat() print the precision time in milliseconds instead
-        # of microseconds, becasue Java can't handle that. -.-
-
-    @property
-    def duration(self) -> int:
-        """Get the conference duration in seconds.
-
-        If not set the duration falls back to 6 hours (21.600 seconds).
+        Disgusting hack to make isoformat() print the precision time in milliseconds instead of
+        microseconds, becasue Java can't handle that. -.-
         """
+
+        start_time = self.start_time.strftime('%Y-%m-%dT%H:%M:%S.ms%z')
+
+        return start_time.replace('ms', '{:03.0f}'.format(self.start_time.microsecond//1000))
+
+
+    def get_duration_in_seconds(self) -> int:
+        """Get the conference duration in seconds."""
 
         return int(self.__duration.total_seconds())
 
-    def to_dict(self) -> dict:
-        """Return the information about the event as dict"""
+    def get_jicofo_api_dict(self) -> dict:
+        """Return the information about the event as dict for Jicofo"""
 
         output = {
             'id': self.id,
             'name': self.name,
-            'start_time': self.start_time,
-            'duration': self.duration
+            'start_time': self.get_SimpleDateFormat_start_time(),
+            'duration': str(self.duration)
         }
         if self.mail_owner is not None:
             output['mail_owner'] = self.mail_owner
-        if self.room_url is not None:
-            output['url'] = self.room_url
         if self.pin is not None:
             output['pin'] = self.pin
+
         return output
 
     def check_allowed(self, owner: str = None, start_time: str = None) -> bool:
@@ -97,120 +121,124 @@ class Reservation:
             start_time = datetime.now(datetime.timezone.utc).isoformat()
         if self.mail_owner != owner:
             raise ConferenceNotAllowed('This user is not allowed to start this conference!')
-        if self.__start_time > dp.isoparse(start_time):
+        if self.start_time_aware > dp.isoparse(start_time):
             raise ConferenceNotAllowed('The conference has not started yet.')
+
         return True
 
 
 class Manager:
     def __init__(self):
         self.__logger = logging.getLogger()
-        self.__conferences = {}
-        self.__reservations = {}
+        engine = create_engine('sqlite:///data/reservations.sqlite3', echo=False)
+        Base.metadata.create_all(engine)
+        Session.configure(bind=engine)
+        self.session = Session()
 
     @property
-    def reservations(self) -> dict:
+    def all_reservations(self) -> list:
         """Get all reservations as dict"""
 
-        return self.__reservations
+        return self.session.query(Reservation) \
+                           .filter(Reservation.active == False) \
+                           .order_by(Reservation.id)
 
     @property
-    def conferences_formatted(self) -> dict:
-        """Get all conferences formatted for the frontend"""
-
-        return {key: Reservation.format_event(val) for key, val in self.__conferences.items()}
-
-    @property
-    def reservations_formatted(self) -> dict:
-        """Get all reservations formatted for the frontend"""
-
-        return {key: Reservation.format_event(val) for key, val in self.__reservations.items()}
-
-    @property
-    def conferences(self) -> dict:
+    def all_conferences(self) -> list:
         """Get all conferences as dict"""
 
-        return self.__conferences
+        return self.session.query(Reservation) \
+                           .filter(Reservation.active == True) \
+                           .order_by(Reservation.id)
 
-    def search_conference_by_name(self, name: str) -> Union[None, str]:
-        """Return the confernce ID for a given name"""
-
-        for id, conference in self.conferences.items():
-            if conference.get('name') == name:
-                return id
-        return None
 
     def allocate(self, data: dict) -> dict:
         """Check if the conference request matches a reservation."""
 
         # Check for conflicting conference
         name = data.get('name')
-        id = self.search_conference_by_name(name)
-        if id is not None:
-            self.__logger.info(f'Conference {id} already exists')
-            raise ConferenceExists(id)
+        event = self.get_conference(name=name)
+        if event is not None:
+            self.__logger.info(f'Conference {event.id} already exists')
+            raise ConferenceExists(event.id)
         # Check for existing reservation
-        if name in self.reservations:
+        event = self.get_reservation(name=name)
+        if event is not None:
             # Raise ConferenceNotAllowed if necessary
-            reservation = Reservation(self.reservations.get(name))
-            reservation.check_allowed(owner=data.get('mail_owner'),
-                                      start_time=data.get('start_time'))
-            self.__logger.debug('Reservation checked, conference can start')
-            self.__conferences[reservation.id] = self.__reservations.pop(name)
-            return reservation.to_dict()
+            event.check_allowed(owner=data.get('mail_owner'),
+                                start_time=data.get('start_time'))
+            self.__logger.debug('Reservation for room {name} checked, conference can start.')
+            event.active = True
+            self.session.commit()
+        else:
+            self.__logger.debug(f'No reservation found for room {name}')
+            event = self.add_conference(data)
 
-        self.__logger.debug(f'No reservation found for room name {name}')
-        id = self.add_conference(data)
-        return self.__conferences[id]
+        return event.get_jicofo_api_dict()
 
-    def delete_conference(self, id: int = None) -> bool:
+    def delete_conference(self, id: int = None, name: str = None) -> bool:
         """Delete a conference in the database"""
 
-        try:
-            self.__conferences.pop(int(id))
-        except KeyError:
-            self.__logger.error(f'Could not remove conference {id} from the database')
+        event = self.session.query(Reservation) \
+                            .filter(or_(Reservation.name == name, Reservation.id == id)) \
+                            .filter(Reservation.active == True) \
+                            .first()
+
+        if event is None:
+            self.__logger.error('Delete failed, could not find conference in database')
             return False
-        else:
-            self.__logger.debug(f'Remove conference {id} from the database')
-            return True
+
+        self.session.delete(event)
+        self.session.commit()
+        return True
 
     def add_conference(self, data: dict) -> str:
         """Add a conference to the database"""
 
-        conference = Reservation(data)
-        self.__conferences[conference.id] = conference.to_dict()
-        self.__logger.debug(f'Add conference {conference.id} - {conference.name} to the database')
-        return conference.id
+        event = Reservation().from_dict(data)
+        event.active = True
+        self.session.add(event)
+        self.session.commit()
+        self.__logger.debug(f'Add conference {event.id} - {event.name} to the database')
+        return event
 
-    def get_conference(self, id: int = None) -> dict:
+    def get_conference(self, id: int = None, name: str = None) -> Union[Reservation, None]:
         """Get the conference information"""
 
-        if id in self.__conferences:
-            return self.__conferences.get(id)
-        return {}
+        return self.session.query(Reservation) \
+                           .filter(or_(Reservation.name == name, Reservation.id == id)) \
+                           .filter(Reservation.active == True) \
+                           .first()
+
 
     def delete_reservation(self, id: int = None, name: str = None) -> bool:
         """Delete a reservation in the database"""
 
-        if id is not None:
-            for rname, reservation in self.__reservations.items():
-                if reservation.get('id') == int(id):
-                    name = rname
-                    break
-        try:
-            self.__reservations.pop(name)
-        except KeyError:
-            self.__logger.error(f'Could not remove reservation {name} from the database')
+        event = self.session.query(Reservation) \
+                            .filter(or_(Reservation.name == name, Reservation.id == id)) \
+                            .first()
+
+        if event is None:
+            self.__logger.error('Delete failed, could not find reservation in database')
             return False
-        else:
-            self.__logger.debug(f'Remove reservation {name} from the database')
-            return True
+
+        self.session.delete(event)
+        self.session.commit()
+        return True
+
+    def get_reservation(self, id: int = None, name: str = None) -> Union[Reservation, None]:
+        """Get the reservation information"""
+
+        return self.session.query(Reservation) \
+                           .filter(or_(Reservation.name == name, Reservation.id == id)) \
+                           .filter(Reservation.active == False) \
+                           .first()
 
     def add_reservation(self, data: dict) -> int:
         """Add a reservation to the database."""
 
-        reservation = Reservation(data)
-        self.__reservations[reservation.name] = reservation.to_dict()
-        self.__logger.debug(f'Add reservation for room {reservation.name} to the database')
-        return reservation.id
+        event = Reservation().from_dict(data)
+        self.session.add(event)
+        self.session.commit()
+        self.__logger.debug(f'Add reservation for room {event.name} to the database')
+        return event
