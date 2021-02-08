@@ -79,7 +79,4 @@ def conference_id(id):
         if manager.delete_conference(id=id):
             return jsonify({'status': 'OK'}), status.HTTP_200_OK
         else:
-            return jsonify({
-                'status': 'Failed',
-                'message': f'Could not remove {id} from database.'
-                }), status.HTTP_403_FORBIDDEN
+            return jsonify({'status': 'Failed'}), status.HTTP_403_FORBIDDEN

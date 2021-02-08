@@ -36,10 +36,10 @@
           <thead>
             <tr>
                 <th>ID</th>
-                <th>Start time</th>
                 <th>Name</th>
-                <th>Owner</th>
+                <th>Start time</th>
                 <th>Duration</th>
+                <th>Owner</th>
                 <th>Action</th>
             </tr>
           </thead>
@@ -47,10 +47,10 @@
             {% for reservation in reservations %}
             <tr>
               <td>{{ reservation.id }}</td>
-              <td>{{ reservation.start_time_formatted }}</td>
               <td><a href="{{ reservation.room_url }}">{{ reservation.name }}</a></td>
-              <td>{{ reservation.mail_owner }}</td>
+              <td>{{ reservation.start_time_formatted }}</td>
               <td>{{ reservation.duration }}</td>
+              <td>{{ reservation.mail_owner }}</td>
               <td><a href="/reservation/delete/{{ reservation.id }}">Delete</a></td>
             </tr>
             {% endfor %}

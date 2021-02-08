@@ -66,12 +66,12 @@ class Reservation(Base):
     @property
     def start_time_formatted(self) -> str:
 
-        return self.start_time.strftime('%c')
+        return self.start_time_aware.strftime('%d %b %Y - %H:%M %Z')
 
     @property
     def end_time_formatted(self) -> str:
 
-        return self.end_time.strftime('%c')
+        return self.end_time_aware.strftime('%d %b %Y - %H:%M %Z')
 
     @property
     def start_time_aware(self) -> datetime:
@@ -130,6 +130,7 @@ class Reservation(Base):
         """Check if the conference is allowed to start.
 
         The conference is check for owner and/or starting time."""
+
         if start_time is None:
             start_time = datetime.now(datetime.timezone.utc).isoformat()
         if self.mail_owner != owner:
