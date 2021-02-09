@@ -35,7 +35,7 @@ class Reservation(Base):
         self.pin = data.get('pin')
         self.timezone = data.get('timezone', 'UTC')
         self.set_start_time(start_time=data.get('start_time'))
-        self.set_duration(duration=data.get('duration'))
+        self.set_duration(duration=data.get('duration', -1))
         self.jitsi_server = os.environ.get('PUBLIC_URL')  # Public URL of the Jitsi web service
 
         return self
@@ -58,7 +58,7 @@ class Reservation(Base):
         if isinstance(duration, timedelta):
             self.duration = duration
         else:
-            duration = int(duration) if int(duration) > 0 else 6*36000
+            duration = int(duration) if int(duration) > 0 else 6*3600
             self.duration = timedelta(seconds=duration)
         self.end_time = self.start_time + self.duration
 
@@ -105,14 +105,14 @@ class Reservation(Base):
         microseconds, becasue Java can't handle that. -.-
         """
 
-        start_time = self.start_time.strftime('%Y-%m-%dT%H:%M:%S.ms%z')
+        start_time = self.start_time_aware.strftime('%Y-%m-%dT%H:%M:%S.ms%z')
 
         return start_time.replace('ms', '{:03.0f}'.format(self.start_time.microsecond//1000))
 
     def get_duration_in_seconds(self) -> int:
         """Get the conference duration in seconds."""
 
-        return int(self.__duration.total_seconds())
+        return int(self.duration.total_seconds())
 
     def get_jicofo_api_dict(self) -> dict:
         """Return the information about the event as dict for Jicofo"""
@@ -121,7 +121,7 @@ class Reservation(Base):
             'id': self.id,
             'name': self.name,
             'start_time': self.get_SimpleDateFormat_start_time(),
-            'duration': str(self.duration)
+            'duration': self.get_duration_in_seconds()
         }
         if self.mail_owner is not None:
             output['mail_owner'] = self.mail_owner
