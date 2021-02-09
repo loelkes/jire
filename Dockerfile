@@ -1,17 +1,29 @@
-FROM python:3.8-alpine
+FROM python:3.9-slim AS compile-image
 
-WORKDIR /usr/src/app
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+WORKDIR /opt/venv
 
-
-RUN pip install Flask
-RUN pip install gunicorn
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends build-essential gcc
 
 COPY setup.py .
+
+RUN pip install Flask
+RUN python setup.py install
+
+FROM python:3.9-alpine AS build-image
+
+WORKDIR /opt/venv
+COPY --from=compile-image /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
 COPY jire ./jire
 COPY main.py .
 COPY run.sh .
 RUN mkdir log
-RUN python setup.py install
+RUN mkdir data
+RUN pip install gunicorn
 
 EXPOSE 8080
 ENTRYPOINT ["./run.sh"]

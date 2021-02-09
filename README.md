@@ -13,7 +13,7 @@ Jire does this for you.
 
 ```
 docker build -t jire:latest .
-docker run -v "$(pwd)"/log:/usr/src/app/log -p 8080:8080 jire:latest
+docker run -v "$(pwd)"/log:/opt/venv/log "$(pwd)"/data:/opt/venv/data -p 8080:8080 jire:latest
 ```
 
 ### Configure Jitsi-meet
