@@ -33,6 +33,8 @@ class Reservation(Base):
         return f'<Reservation(id={self.id}, name={self.name}), start_time={self.start_time}>'
 
     def from_dict(self, data: dict):
+        """Set the data for this event with a dictionary. Use with the REST API and frontend."""
+
         self.name = data.get('name').replace(' ', '_').lower()
         self.mail_owner = data.get('mail_owner')
         self.pin = data.get('pin')
@@ -44,7 +46,7 @@ class Reservation(Base):
         return self
 
     def set_start_time(self, start_time: Union[datetime, str]):
-        """Handle different datetime inputs and timezones"""
+        """Set the conference start time and make it timezone-aware"""
 
         if isinstance(start_time, datetime):
             start_time = start_time
@@ -56,6 +58,8 @@ class Reservation(Base):
         self.start_time = start_time
 
     def set_duration(self, duration: Union[timedelta, str]):
+        """Set the conference duration and the conference end time"""
+
         if isinstance(duration, timedelta):
             self.duration = duration
         else:
@@ -65,28 +69,36 @@ class Reservation(Base):
 
     @property
     def start_time_formatted(self) -> str:
+        """Get the timezone-aware start date formatted for the frontend"""
 
         return self.start_time_aware.strftime('%d %b %Y - %H:%M %Z')
 
     @property
     def end_time_formatted(self) -> str:
+        """Get the timezone-aware end date formatted for the frontend"""
 
         return self.end_time_aware.strftime('%d %b %Y - %H:%M %Z')
 
     @property
     def start_time_aware(self) -> datetime:
+        """Get the timezone-aware start date"""
 
         timezone = pytz.timezone(self.timezone)
         return timezone.localize(self.start_time)
 
     @property
     def end_time_aware(self) -> datetime:
+        """Get the timezone-aware end date"""
 
         timezone = pytz.timezone(self.timezone)
         return timezone.localize(self.end_time)
 
     @property
     def room_url(self):
+        """Get the URL to the conference room.
+
+        Only works if the environment variable PUBLIC_URL is set.
+        """
 
         if self.jitsi_server is not None:
             return f'{self.jitsi_server}/{self.name}'
@@ -259,6 +271,7 @@ class Manager:
         return event
 
     def check_overlapping_conference(self, new_res: Reservation) -> bool:
+        """Check if start and end time of the new entry overlap with an existing reservation."""
 
         time_filter = between(new_res.start_time, Reservation.start_time, Reservation.end_time)
         result = self.session.query(Reservation) \
@@ -275,8 +288,8 @@ class Manager:
         return True
 
     def check_overlapping_reservations(self, new_res: Reservation) -> bool:
+        """Check if start time of the new entry overlaps with existing conferences."""
 
-        # Check if start and end time of the new reservation collide with other bookings
         time_filter = or_(between(new_res.start_time, Reservation.start_time, Reservation.end_time),
                           between(new_res.end_time, Reservation.start_time, Reservation.end_time))
 

@@ -6,6 +6,9 @@ It is possible to connect Jicofo to external conference reservation system using
 
 Jire does this for you.
 
+![Screenshot of the configuration interface](screenshot.png)
+
+
 ## Use with Docker
 
 ```
