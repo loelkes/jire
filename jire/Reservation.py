@@ -52,13 +52,13 @@ class Reservation(Base):
             start_time = timezone.localize(start_time)
         self.start_time = start_time
 
-    def set_duration(self, duration: Union[timedelta, str]):
+    def set_duration(self, duration: Union[timedelta, str], default: int = 21600):
         """Set the conference duration and the conference end time"""
 
         if isinstance(duration, timedelta):
             self.duration = duration
         else:
-            duration = int(duration) if int(duration) > 0 else 6*3600
+            duration = int(duration) if int(duration) > 0 else default
             self.duration = timedelta(seconds=duration)
         self.end_time = self.start_time + self.duration
 

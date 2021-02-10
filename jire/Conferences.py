@@ -123,12 +123,12 @@ class Manager:
         self.__logger.debug(f'Add reservation for room {event.name} to the database')
         return event
 
-    def check_overlapping_conference(self, new_res: Reservation) -> bool:
+    def check_overlapping_conference(self, event: Reservation) -> bool:
         """Check if start and end time of the new entry overlap with an existing reservation."""
 
-        time_filter = between(new_res.start_time, Reservation.start_time, Reservation.end_time)
+        time_filter = between(event.start_time, Reservation.start_time, Reservation.end_time)
         result = self.session.query(Reservation) \
-                             .filter(Reservation.name == new_res.name) \
+                             .filter(Reservation.name == event.name) \
                              .filter(time_filter) \
                              .filter(Reservation.active == True) \
                              .first()
@@ -140,15 +140,13 @@ class Manager:
 
         return True
 
-    def check_overlapping_reservations(self, new_res: Reservation) -> bool:
+    def check_overlapping_reservations(self, event: Reservation) -> bool:
         """Check if start time of the new entry overlaps with existing conferences."""
 
-        time_filter = or_(between(new_res.start_time, Reservation.start_time, Reservation.end_time),
-                          between(new_res.end_time, Reservation.start_time, Reservation.end_time))
-
         results = self.session.query(Reservation) \
-                             .filter(Reservation.name == new_res.name) \
-                             .filter(time_filter) \
+                             .filter(Reservation.name == event.name) \
+                             .filter(event.start_time <= Reservation.end_time) \
+                             .filter(event.end_time >= Reservation.start_time) \
                              .filter(Reservation.active == False)
 
         if results.count():
