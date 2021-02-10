@@ -8,7 +8,7 @@
         <h2>Book a conference room</h2>
 
         <form method="post" role="form" action="/reservation/create" enctype="multipart/form-data">
-          {{ form.csrf_token }}
+            {{ form.csrf_token }}
 
             <div class="row">
               <div class="col-xl-3">{{ wtf.form_field(form.name) }}</div>
@@ -22,6 +22,8 @@
                   </div>
               </div>
             </div>
+
+            <!-- Enable this once Jicofo adds support for the feature -->
             <!-- <div class="row">
                 <div class="col-xl-3">{{ wtf.form_field(form.pin) }}</div>
             </div> -->

@@ -25,7 +25,7 @@ class Reservation(Base):
     active = Column(Boolean, default=False)
 
     def __repr__(self):
-        return f'<Reservation(id={self.id}, name={self.name}), start_time={self.start_time}>'
+        return f'<Reservation(id={self.id}, name={self.name}, start_time={self.start_time})>'
 
     def from_dict(self, data: dict):
         """Set the data for this event with a dictionary. Use with the REST API and frontend."""

@@ -7,21 +7,21 @@ from .forms import ReservationForm
 
 @app.route('/conferences', methods=['GET'])
 def show_conferences():
-    return render_template('conferences.html',
-                           conferences=manager.all_conferences)
+
+    return render_template('conferences.html', conferences=manager.all_conferences)
 
 
 @app.route('/')
 @app.route('/reservations')
 def home():
+
     form = ReservationForm()
-    return render_template('reservations.html',
-                           form=form,
-                           reservations=manager.all_reservations)
+    return render_template('reservations.html', form=form, reservations=manager.all_reservations)
 
 
 @app.route('/reservation/create', methods=['POST'])
 def reservation():
+
     form = ReservationForm()
     if form.validate_on_submit():
         data = form.data
@@ -39,13 +39,13 @@ def reservation():
             label = getattr(form, key).label.text
             # In case multiple messages for one validation?
             flash('{}: {}'.format(label, ' '.join([str(m) for m in value])), 'danger')
-    return render_template('reservations.html',
-                           form=form,
-                           reservations=manager.all_reservations)
+
+    return render_template('reservations.html', form=form, reservations=manager.all_reservations)
 
 
 @app.route('/reservation/delete/<id>', methods=['GET'])
 def delete_reservation(id):
+
     manager.delete_reservation(id=id)
     return redirect(url_for('home'))
 
@@ -64,6 +64,7 @@ def conference():
         # Confernce cannot be created: user not allowed or conference has not started
         return jsonify({'message': e.message}), status.HTTP_403_FORBIDDEN
     else:
+        # Conference was created, send back details
         return jsonify(output), status.HTTP_200_OK
 
 
@@ -79,4 +80,5 @@ def conference_id(id):
         if manager.delete_conference(id=id):
             return jsonify({'status': 'OK'}), status.HTTP_200_OK
         else:
+            # Jicofo does not seem to care what is sent back
             return jsonify({'status': 'Failed'}), status.HTTP_403_FORBIDDEN

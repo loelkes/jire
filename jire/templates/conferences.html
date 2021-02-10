@@ -12,7 +12,6 @@
               <th>ID</th>
               <th>Name</th>
               <th>End time</th>
-              <th>Duration</th>
               <th>Owner</th>
             </tr>
           </thead>
@@ -22,7 +21,6 @@
               <td>{{ conference.id }}</td>
               <td><a href="{{ conference.room_url }}">{{ conference.name }}</a></td>
               <td>{{ conference.end_time_formatted }}</td>
-              <td>{{ conference.duration }}</td>
               <td>{{ conference.mail_owner }}</td>
             </tr>
             {% endfor %}

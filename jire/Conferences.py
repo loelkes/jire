@@ -21,7 +21,7 @@ class Manager:
         """Get all reservations as dict"""
 
         return self.session.query(Reservation) \
-                           .filter(Reservation.active == False) \
+                           .filter(Reservation.active is False) \
                            .order_by(Reservation.id)
 
     @property
@@ -29,7 +29,7 @@ class Manager:
         """Get all conferences as dict"""
 
         return self.session.query(Reservation) \
-                           .filter(Reservation.active == True) \
+                           .filter(Reservation.active is True) \
                            .order_by(Reservation.id)
 
     def allocate(self, data: dict) -> dict:
@@ -51,8 +51,12 @@ class Manager:
             event.active = True
             self.session.commit()
         else:
+            # No reservation found, create a new conference
             self.__logger.debug(f'No reservation found for room {name}')
             event = self.add_conference(data)
+            # Only start conference if it does not overlap with an existing reservation
+            # See default duration of conferences.
+            self.check_overlapping_reservations(event=event)
 
         return event.get_jicofo_api_dict()
 
@@ -61,7 +65,7 @@ class Manager:
 
         event = self.session.query(Reservation) \
                             .filter(or_(Reservation.name == name, Reservation.id == id)) \
-                            .filter(Reservation.active == True) \
+                            .filter(Reservation.active is True) \
                             .first()
 
         if event is None:
@@ -87,7 +91,7 @@ class Manager:
 
         return self.session.query(Reservation) \
                            .filter(or_(Reservation.name == name, Reservation.id == id)) \
-                           .filter(Reservation.active == True) \
+                           .filter(Reservation.active is True) \
                            .first()
 
     def delete_reservation(self, id: int = None, name: str = None) -> bool:
@@ -110,14 +114,17 @@ class Manager:
 
         return self.session.query(Reservation) \
                            .filter(or_(Reservation.name == name, Reservation.id == id)) \
-                           .filter(Reservation.active == False) \
+                           .filter(Reservation.active is False) \
                            .first()
 
     def add_reservation(self, data: dict) -> int:
         """Add a reservation to the database."""
 
         event = Reservation().from_dict(data)
+        # Check if this reservation overlaps with other reservations (same name)
         self.check_overlapping_reservations(event)
+        # Check if this reservation might start before active conferences with the same name end.
+        self.check_overlapping_conference(event)
         self.session.add(event)
         self.session.commit()
         self.__logger.debug(f'Add reservation for room {event.name} to the database')
@@ -130,7 +137,7 @@ class Manager:
         result = self.session.query(Reservation) \
                              .filter(Reservation.name == event.name) \
                              .filter(time_filter) \
-                             .filter(Reservation.active == True) \
+                             .filter(Reservation.active is True) \
                              .first()
 
         if result is not None:
@@ -147,7 +154,7 @@ class Manager:
                              .filter(Reservation.name == event.name) \
                              .filter(event.start_time <= Reservation.end_time) \
                              .filter(event.end_time >= Reservation.start_time) \
-                             .filter(Reservation.active == False)
+                             .filter(Reservation.active is False)
 
         if results.count():
             raise OverlappingReservation(events=results.all())

@@ -12,6 +12,7 @@ class ConferenceNotAllowed(Exception):
     def __init__(self, message=None):
         self.message = message
 
+
 class OverlappingReservation(Exception):
     """Raised if the user tries to make a new entry that overlaps existing reservations."""
 
